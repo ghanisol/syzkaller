@@ -20,22 +20,27 @@ func (p *Prog) Mutate(rs rand.Source, ncalls int, ct *ChoiceTable, corpus []*Pro
 		ct:     ct,
 		corpus: corpus,
 	}
-	for stop, ok := false, false; !stop; stop = ok && r.oneOf(3) {
-		switch {
-		case r.oneOf(5):
-			// Not all calls have anything squashable,
-			// so this has lower priority in reality.
-			ok = ctx.squashAny()
-		case r.nOutOf(1, 100):
-			ok = ctx.splice()
-		case r.nOutOf(20, 31):
-			ok = ctx.insertCall()
-		case r.nOutOf(10, 11):
-			ok = ctx.mutateArg()
-		default:
-			ok = ctx.removeCall()
-		}
+	/* gmod */
+	// for stop, ok := false, false; !stop; stop = ok && r.oneOf(3) {
+	// 	switch {
+	// 	case r.oneOf(5):
+	// 		// Not all calls have anything squashable,
+	// 		// so this has lower priority in reality.
+	// 		ok = ctx.squashAny()
+	// 	case r.nOutOf(1, 100):
+	// 		ok = ctx.splice()
+	// 	case r.nOutOf(20, 31):
+	// 		ok = ctx.insertCall()
+	// 	case r.nOutOf(10, 11):
+	// 		ok = ctx.mutateArg()
+	// 	default:
+	// 		ok = ctx.removeCall()
+	// 	}
+	// }
+	for stop, ok, i := false, false, 0; !stop && i<5; stop, i = ok, i+1  {
+		ok = ctx.mutateArg() 	// only mutate args
 	}
+	/* gmod */
 	for _, c := range p.Calls {
 		p.Target.SanitizeCall(c)
 	}
@@ -141,7 +146,10 @@ func (ctx *mutator) mutateArg() bool {
 	}
 	s := analyze(ctx.ct, p, c)
 	updateSizes := true
-	for stop, ok := false, false; !stop; stop = ok && r.oneOf(3) {
+	/* gmod */
+	ok := false
+	//for stop, ok := false, false; !stop; stop = ok && r.oneOf(3) {
+	for stop, i := false, 0; !stop && i<5; stop, i = ok, i+1 {
 		ok = true
 		ma := &mutationArgs{target: p.Target}
 		ForeachArg(c, ma.collectArg)
@@ -161,7 +169,9 @@ func (ctx *mutator) mutateArg() bool {
 		}
 		p.Target.SanitizeCall(c)
 	}
-	return true
+	//return true
+	return ok
+	/* gmod */
 }
 
 func (target *Target) mutateArg(r *randGen, s *state, arg Arg, ctx ArgCtx, updateSizes *bool) ([]*Call, bool) {
@@ -215,7 +225,10 @@ func (t *IntType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []*Ca
 }
 
 func (t *FlagsType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []*Call, retry, preserve bool) {
-	return mutateInt(r, s, arg)
+	/* gmod */
+	return nil, true, false 	// dont mutate FlagsType
+	//return mutateInt(r, s, arg)
+	/* gmod */
 }
 
 func (t *LenType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []*Call, retry, preserve bool) {
@@ -228,7 +241,10 @@ func (t *LenType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []*Ca
 }
 
 func (t *ResourceType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []*Call, retry, preserve bool) {
-	return regenerate(r, s, arg)
+	/* gmod */
+	return nil, true, false 	// dont mutate ResourceType
+	//return regenerate(r, s, arg)
+	/* gmod */
 }
 
 func (t *VmaType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []*Call, retry, preserve bool) {
@@ -335,33 +351,36 @@ func (t *StructType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []
 }
 
 func (t *UnionType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []*Call, retry, preserve bool) {
-	if gen := r.target.SpecialTypes[t.Name()]; gen != nil {
-		var newArg Arg
-		newArg, calls = gen(&Gen{r, s}, t, arg)
-		replaceArg(arg, newArg)
-	} else {
-		a := arg.(*UnionArg)
-		current := -1
-		for i, option := range t.Fields {
-			if a.Option.Type().FieldName() == option.FieldName() {
-				current = i
-				break
-			}
-		}
-		if current == -1 {
-			panic("can't find current option in union")
-		}
-		newIdx := r.Intn(len(t.Fields) - 1)
-		if newIdx >= current {
-			newIdx++
-		}
-		optType := t.Fields[newIdx]
-		removeArg(a.Option)
-		var newOpt Arg
-		newOpt, calls = r.generateArg(s, optType)
-		replaceArg(arg, MakeUnionArg(t, newOpt))
-	}
-	return
+	/* gmod */
+	return nil, true, false 	// dont mutate UnionType
+	// if gen := r.target.SpecialTypes[t.Name()]; gen != nil {
+	// 	var newArg Arg
+	// 	newArg, calls = gen(&Gen{r, s}, t, arg)
+	// 	replaceArg(arg, newArg)
+	// } else {
+	// 	a := arg.(*UnionArg)
+	// 	current := -1
+	// 	for i, option := range t.Fields {
+	// 		if a.Option.Type().FieldName() == option.FieldName() {
+	// 			current = i
+	// 			break
+	// 		}
+	// 	}
+	// 	if current == -1 {
+	// 		panic("can't find current option in union")
+	// 	}
+	// 	newIdx := r.Intn(len(t.Fields) - 1)
+	// 	if newIdx >= current {
+	// 		newIdx++
+	// 	}
+	// 	optType := t.Fields[newIdx]
+	// 	removeArg(a.Option)
+	// 	var newOpt Arg
+	// 	newOpt, calls = r.generateArg(s, optType)
+	// 	replaceArg(arg, MakeUnionArg(t, newOpt))
+	// }
+	// return
+	/* gmod */
 }
 
 func (t *CsumType) mutate(r *randGen, s *state, arg Arg, ctx ArgCtx) (calls []*Call, retry, preserve bool) {

@@ -70,7 +70,7 @@ func sshArgs(debug bool, sshKey, portArg string, port int) []string {
 		"-o", "BatchMode=yes",
 		"-o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
-		"-o", "ConnectTimeout=10",
+		"-o", "ConnectTimeout=100", 	// gmod | wait longer to remove connection refused errors
 	}
 	if sshKey != "" {
 		args = append(args, "-i", sshKey)

@@ -64,12 +64,14 @@ func newProc(fuzzer *Fuzzer, pid int) (*Proc, error) {
 }
 
 func (proc *Proc) loop() {
-	generatePeriod := 100
-	if proc.fuzzer.config.Flags&ipc.FlagSignal == 0 {
-		// If we don't have real coverage signal, generate programs more frequently
-		// because fallback signal is weak.
-		generatePeriod = 2
-	}
+	/* gmod */
+	// generatePeriod := 100
+	// if proc.fuzzer.config.Flags&ipc.FlagSignal == 0 {
+	// 	// If we don't have real coverage signal, generate programs more frequently
+	// 	// because fallback signal is weak.
+	// 	generatePeriod = 2
+	// }
+	/* gmod */
 	for i := 0; ; i++ {
 		item := proc.fuzzer.workQueue.dequeue()
 		if item != nil {
@@ -88,18 +90,21 @@ func (proc *Proc) loop() {
 
 		ct := proc.fuzzer.choiceTable
 		corpus := proc.fuzzer.corpusSnapshot()
-		if len(corpus) == 0 || i%generatePeriod == 0 {
+		/* gmod */
+		if len(corpus) == 0 { // i%generatePeriod == 0 {
 			// Generate a new prog.
 			p := proc.fuzzer.target.Generate(proc.rnd, programLength, ct)
 			log.Logf(1, "#%v: generated", proc.pid)
 			proc.execute(proc.execOpts, p, ProgNormal, StatGenerate)
-		} else {
+		} else { 	// if len(corpus)>0, never generate new progs 
 			// Mutate an existing prog.
 			p := corpus[proc.rnd.Intn(len(corpus))].Clone()
 			p.Mutate(proc.rnd, programLength, ct, corpus)
 			log.Logf(1, "#%v: mutated", proc.pid)
 			proc.execute(proc.execOpts, p, ProgNormal, StatFuzz)
 		}
+		/* gmod */
+
 	}
 }
 
@@ -121,8 +126,8 @@ func (proc *Proc) triageInput(item *WorkTriage) {
 	log.Logf(3, "triaging input for %v (new signal=%v)", logCallName, newSignal.Len())
 	var inputCover cover.Cover
 	const (
-		signalRuns       = 3
-		minimizeAttempts = 3
+		signalRuns       = 1 	// gmod
+		minimizeAttempts = 0 	// gmod
 	)
 	// Compute input coverage and non-flaky signal for minimization.
 	notexecuted := 0
@@ -145,23 +150,25 @@ func (proc *Proc) triageInput(item *WorkTriage) {
 		}
 		inputCover.Merge(thisCover)
 	}
-	if item.flags&ProgMinimized == 0 {
-		item.p, item.call = prog.Minimize(item.p, item.call, false,
-			func(p1 *prog.Prog, call1 int) bool {
-				for i := 0; i < minimizeAttempts; i++ {
-					info := proc.execute(proc.execOptsNoCollide, p1, ProgNormal, StatMinimize)
-					if !reexecutionSuccess(info, &item.info, call1) {
-						// The call was not executed or failed.
-						continue
-					}
-					thisSignal, _ := getSignalAndCover(p1, info, call1)
-					if newSignal.Intersection(thisSignal).Len() == newSignal.Len() {
-						return true
-					}
-				}
-				return false
-			})
-	}
+	/* gmod */ 	// dont minimize the input progs
+	// if item.flags&ProgMinimized == 0 {
+	// 	item.p, item.call = prog.Minimize(item.p, item.call, false,
+	// 		func(p1 *prog.Prog, call1 int) bool {
+	// 			for i := 0; i < minimizeAttempts; i++ {
+	// 				info := proc.execute(proc.execOptsNoCollide, p1, ProgNormal, StatMinimize)
+	// 				if !reexecutionSuccess(info, &item.info, call1) {
+	// 					// The call was not executed or failed.
+	// 					continue
+	// 				}
+	// 				thisSignal, _ := getSignalAndCover(p1, info, call1)
+	// 				if newSignal.Intersection(thisSignal).Len() == newSignal.Len() {
+	// 					return true
+	// 				}
+	// 			}
+	// 			return false
+	// 		})
+	// }
+	/* gmod */
 
 	data := item.p.Serialize()
 	sig := hash.Hash(data)
