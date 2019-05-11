@@ -93,9 +93,9 @@ func (proc *Proc) loop() {
 		/* gmod */
 		if len(corpus) == 0 { // i%generatePeriod == 0 {
 			// Generate a new prog.
-			p := proc.fuzzer.target.Generate(proc.rnd, programLength, ct)
-			log.Logf(1, "#%v: generated", proc.pid)
-			proc.execute(proc.execOpts, p, ProgNormal, StatGenerate)
+			// p := proc.fuzzer.target.Generate(proc.rnd, programLength, ct)
+			// log.Logf(1, "#%v: generated", proc.pid)
+			// proc.execute(proc.execOpts, p, ProgNormal, StatGenerate)
 		} else { 	// if len(corpus)>0, never generate new progs 
 			// Mutate an existing prog.
 			p := corpus[proc.rnd.Intn(len(corpus))].Clone()

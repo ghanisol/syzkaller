@@ -235,7 +235,7 @@ func RunManager(cfg *mgrconfig.Config, target *prog.Target, sysTarget *targets.T
 					mgr.mu.Unlock()
 					continue
 				}
-				mgr.minimizeCorpus()
+				// mgr.minimizeCorpus()
 				vals["corpus"] = uint64(len(mgr.corpus))
 				vals["uptime"] = uint64(time.Since(mgr.firstConnect)) / 1e9
 				vals["fuzzing"] = uint64(mgr.fuzzingTime) / 1e9
@@ -824,7 +824,7 @@ func saveReproStats(filename string, stats *repro.Stats) {
 func (mgr *Manager) getMinimizedCorpus() (corpus, repros [][]byte) {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
-	mgr.minimizeCorpus()
+	// mgr.minimizeCorpus()
 	corpus = make([][]byte, 0, len(mgr.corpus))
 	for _, inp := range mgr.corpus {
 		corpus = append(corpus, inp.Prog)
@@ -889,7 +889,7 @@ func (mgr *Manager) fuzzerConnect() ([]rpctype.RPCInput, [][]byte) {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
-	mgr.minimizeCorpus()
+	// mgr.minimizeCorpus()
 	corpus := make([]rpctype.RPCInput, 0, len(mgr.corpus))
 	for _, inp := range mgr.corpus {
 		corpus = append(corpus, inp)
